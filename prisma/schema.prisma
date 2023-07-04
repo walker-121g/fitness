@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model App {
+  id          Int      @id @unique @default(autoincrement())
+  version     String
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id        Int      @id @unique @default(autoincrement())
+  firstName String   @db.VarChar(100)
+  lastName  String   @db.VarChar(100)
+  profile   String   @db.VarChar(20)
+  bio       String?  @db.VarChar(500)
+  state     String?  @db.VarChar(2)
+  country   String?
+  picture   String?  @db.VarChar(16)
+  email     String   @unique
+  password  String?
+  isPublic  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  streak    Int      @default(0)
+
+  type              UserType       @default(BASE)
+  provider          UserProvider?
+  Sessions          UserSession[]
+  IncomingRelations UserRelation[] @relation("IncomingRelation")
+  OutgoingRelations UserRelation[] @relation("OutgoingRelation")
+}
+
+model UserSession {
+  id           Int      @id @unique @default(autoincrement())
+  userId       Int
+  secret       String
+  salt         String
+  createdAt    DateTime @default(now())
+  isRemembered Boolean  @default(false)
+  isValid      Boolean  @default(true)
+  ip           String?
+  User         User     @relation(fields: [userId], references: [id])
+}
+
+model UserRelation {
+  id        Int            @id @unique @default(autoincrement())
+  targetId  Int
+  createdBy Int
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  status    RelationStatus @default(PENDING)
+  Target    User           @relation("IncomingRelation", fields: [targetId], references: [id])
+  Author    User           @relation("OutgoingRelation", fields: [createdBy], references: [id])
+}
+
+enum UserType {
+  ADMIN
+  SUPPORT
+  BASE
+}
+
+enum UserProvider {
+  GOOGLE
+  APPLE
+  GITHUB
+}
+
+enum RelationStatus {
+  PENDING
+  DENIED
+  APPROVED
+  BLOCKED
+}
